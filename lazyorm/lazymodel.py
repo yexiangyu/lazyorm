@@ -149,7 +149,7 @@ if __name__ == "__main__":
 
     tm = Timer()
 
-    get_connection('Human', 'mqtt', host=mqtt_port, port=mqtt_port, topic='/test')
+    get_connection('Human', 'mqtt', host=mqtt_host, port=mqtt_port, topic='/test')
     get_connection('Human', 'elastic', index='test_index_lazy', es_node=es_node, es_username=es_username, es_password=es_password)
     get_connection('Human', 'redis', hash='human', host=redis_host, port=redis_port, password=redis_password)
 
