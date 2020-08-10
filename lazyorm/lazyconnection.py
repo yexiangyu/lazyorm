@@ -51,3 +51,7 @@ def get_connection(conn_name, conn_type, **kw):
     conn = CONNECTIONS[conn_name][conn_type]
     LOG.debug('got connection=%s: %s, with args=%s', dict(conn_name=conn_name, conn_type=conn_type), repr(conn), repr(kw))
     return conn
+
+
+async def get_async_connection(conn_name, conn_type, **kw):
+    pass
