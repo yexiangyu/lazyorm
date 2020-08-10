@@ -75,12 +75,3 @@ class MQTTNode(LazyNode):
         assert isinstance(data, (str, bytes)), data
         self.client.publish(self.topic, payload=data, qos=self.qos)
         LOG.debug("publish payload=%s topic=%s", data, self.topic)
-
-
-if __name__ == "__main__":
-    import time
-    import threading
-
-    a = MQTTNode(topic="/test")
-    threading.Thread(target=lambda: print(a.get())).start()
-    a.put(topic="/test", payload='test')
