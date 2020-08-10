@@ -11,26 +11,27 @@ LOG = logging.getLogger('lazy.mqtt')
 
 class MQTTNode(LazyNode):
     def __init__(self, host="localhost", port=1883, client_id=None, topic=None, qos=0):
+        assert isinstance(host, str), host
+        assert isinstance(port, int), port
 
         client_id = client_id or "mqtt-dest-" + lazyid()
+
+        assert isinstance(client_id, str)
+        assert isinstance(topic, str)
+        assert isinstance(qos, int)
 
         self.host = host
         self.port = port
         self.client_id = client_id
         self.client = None
         self.qos = qos
-
-        self.topic = None
-
-        if topic is not None:
-            assert topic.find("#") < 0, topic
-            self.topic = topic
-
+        self.topic = topic
         self.queue = Queue()
 
-        self.init()
+        self.initialize()
 
-    def init(self):
+    def initialize(self):
+
         if self.client is None:
             self.client = mqtt.Client(client_id=self.client_id)
         else:
@@ -52,42 +53,28 @@ class MQTTNode(LazyNode):
         time.sleep(0.01)  # add this sleep to block till loop fully started, or put/get might start even before loop started
         LOG.info("mqtt client=%s connected to %s:%d, topic=%s", self.client_id, self.host, self.port, repr(self.topic))
 
-    def _args(self, **kw):
-        payload = kw.get('payload', '')
-        qos = kw.get('qos', self.qos)
-        retain = kw.get('retain', False)
-        return payload, qos, retain
-
-    def get(self, **kw):
-
-        _block = kw.get('block', True)
-        _timeout = kw.get('timeout', None)
-
+    def get(self, block=True, timeout=None):
+        assert isinstance(timeout, (float, int)) or timeout is None, timeout
         start = time.time()
-
         while True:
             try:
                 ret = self.queue.get(block=False)
                 return ret
             except Empty:
-                if not _block:
+                if not block:
                     return None
 
-                if _timeout is not None:
+                if timeout is not None:
                     delta = time.time() - start
-                    if delta > _timeout:
+                    if delta > timeout:
                         return None
 
                 time.sleep(0.1)
 
-    def put(self, **kw):
-        payload, qos, retain = self._args(**kw)
-        self.client.publish(self.topic, payload=payload, qos=qos, retain=retain)
-        LOG.debug("publish payload=%s topic=%s", payload, repr(self.topic))
-
-    def __del__(self):
-        if self.client is not None:
-            self.client.loop_stop()
+    def put(self, data):
+        assert isinstance(data, (str, bytes)), data
+        self.client.publish(self.topic, payload=data, qos=self.qos)
+        LOG.debug("publish payload=%s topic=%s", data, self.topic)
 
 
 if __name__ == "__main__":

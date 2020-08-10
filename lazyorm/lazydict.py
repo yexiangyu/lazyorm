@@ -24,15 +24,6 @@ class LazyDict(dict, metaclass=LazyDictMeta):
             v = kw.get(k, None)
             self[k] = vt() if v is None else vt(v)
 
-    # def __getattr__(self, key):
-    #     if key in self._keys:
-    #         return self[key]
-    #     return getattr(super(), key)
-
-    # def __setattr__(self, key, value):
-    #     if key in self._keys:
-    #         self[key] = self._keys[key](value)
-
 
 if __name__ == "__main__":
 

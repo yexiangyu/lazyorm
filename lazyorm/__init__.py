@@ -1,3 +1,4 @@
+import os
 import logging
 
 LOG = logging.getLogger("lazy")
@@ -11,5 +12,9 @@ FORMATTER = logging.Formatter(
 CHANNEL.setFormatter(FORMATTER)
 LOG.addHandler(CHANNEL)
 
-LOG.setLevel(logging.INFO)
+if 'LAZY_DEBUG' in os.environ:
+    LOG.setLevel(logging.DEBUG)
+else:
+    LOG.setLevel(logging.INFO)
+
 LOG.propagate = False
