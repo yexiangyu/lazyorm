@@ -6,7 +6,7 @@ setup(
     keywords=("lazy", "elasticsearch", "mqtt", "redis", "orm"),
     long_description="lay elastic/mqtt/redis orm, put/get/search/delete",
     license="MIT Licence",
-    url="https://github.com/yexiangyu/lazyorm"
+    url="https://github.com/yexiangyu/lazyorm",
     author="yexiangyu",
     author_email="yexiangyu@maimenggroup.com",
     packages=['lazyorm'],
