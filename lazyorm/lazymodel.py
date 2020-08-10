@@ -143,9 +143,13 @@ if __name__ == "__main__":
     redis_host, redis_port = redis_node.split(":")
     redis_port = int(redis_port)
 
+    mqtt_node = os.environ['MQTT_NODE']
+    mqtt_host, mqtt_port = mqtt_node.split(":")
+    mqtt_port = int(mqtt_port)
+
     tm = Timer()
 
-    get_connection('Human', 'mqtt', host='localhost', port=1883, topic='/test')
+    get_connection('Human', 'mqtt', host=mqtt_port, port=mqtt_port, topic='/test')
     get_connection('Human', 'elastic', index='test_index_lazy', es_node=es_node, es_username=es_username, es_password=es_password)
     get_connection('Human', 'redis', hash='human', host=redis_host, port=redis_port, password=redis_password)
 
