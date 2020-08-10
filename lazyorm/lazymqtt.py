@@ -49,8 +49,8 @@ class MQTTNode(LazyNode):
         self.client.on_message = on_message
 
         self.client.connect(self.host, self.port)
-        time.sleep(0.5)  # add this sleep to block till loop fully started, or put/get might start even before loop started
         self.client.loop_start()
+        time.sleep(0.5)  # add this sleep to block till loop fully started, or put/get might start even before loop started
         LOG.info("mqtt client=%s connected to %s:%d, topic=%s", self.client_id, self.host, self.port, repr(self.topic))
 
     def get(self, block=True, timeout=None):
