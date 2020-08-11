@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="lazyorm",
-    version="0.1.5",
+    version="0.2.0",
     keywords=("lazy", "elasticsearch", "mqtt", "redis", "orm"),
     long_description="lay elastic/mqtt/redis orm, put/get/search/delete",
     license="MIT Licence",
@@ -17,6 +17,7 @@ setup(
         'aiohttp',
         'redis',
         'paho-mqtt',
-        'nanoid'
+        'nanoid',
+        'hbmqtt'
     ],
 )

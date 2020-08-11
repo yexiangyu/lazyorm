@@ -87,7 +87,7 @@ class ElasticNode(LazyNode):
 
 
 class AsyncElasticNode(AsyncLazyNode):
-        def __init__(self, index=None, es_node="localhost:9200", es_username=None, es_password=None):
+    def __init__(self, index=None, es_node="localhost:9200", es_username=None, es_password=None):
         assert isinstance(index, str), index
         assert isinstance(es_node, str), es_node
         assert isinstance(es_username, str) or es_username is None, es_username

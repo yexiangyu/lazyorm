@@ -114,12 +114,14 @@ class AsyncMQTTNode(AsyncLazyNode):
 
     async def get(self, block=True, timeout=None):
         assert isinstance(timeout, (float, int)) or timeout is None, timeout
+
         start = time.time()
+
         while True:
             try:
                 ret = await self.queue.get()
                 return ret
-            except Empty:
+            except asyncio.QueueEmpty:
                 if not block:
                     return None
 
