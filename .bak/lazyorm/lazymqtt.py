@@ -1,4 +1,4 @@
-import asyncio
+import asyncio as aio
 import hbmqtt.client as amqtt
 from queue import Queue, Empty
 import paho.mqtt.client as mqtt
@@ -93,49 +93,68 @@ class AsyncMQTTNode(AsyncLazyNode):
         self.host = host
         self.port = port
         self.client_id = client_id
-        self.client = None
+        self.cli = None
         self.qos = qos
         self.topic = topic
-        self.queue = asyncio.Queue()
-        self.connected = False
-        asyncio.ensure_future(self.initialize())
+        self.loop = None
+        self.queue = None
+        self.async_connected = False
+        self.recv_task = None
 
-    async def initialize(self):
+    async def _async_init(self):
+        if self.loop is None:
+            self.loop = aio.get_event_loop()
+            self.async_connected = False
 
-        self.client = amqtt.MQTTClient(client_id=self.client_id)
-        await self.client.connect(f"mqtt://{self.host}:{self.port}")
-        await self.client.subscribe([(self.topic, self.qos)])
-        self.connected = True
+        if not self.loop.is_running():
+            self.loop = aio.get_event_loop()
+            self.async_connected = False
 
+        if self.async_connected:
+            return
+
+        if self.recv_task is not None:
+            assert isinstance(self.recv_task, aio.Task)
+            self.recv_task.cancel()
+
+        self.cli = amqtt.MQTTClient(client_id=self.client_id)
+        self.queue = aio.Queue(1024)  # TODO: will 32 good enough?
+        await self.cli.connect(f"mqtt://{self.host}:{self.port}")
+        await self.cli.subscribe([(self.topic, self.qos)])
+        self.async_connected = True
+        self.recv_task = self.loop.create_task(self._recv_msg())
+
+    async def _recv_msg(self):
         while True:
-            msg = await self.client.deliver_message()
-            pack = msg.publish_packet
-            await self.queue.put(pack.payload.data)
 
-    async def get(self, block=True, timeout=None):
+            msg = await self.cli.deliver_message()
+
+            payload = msg.publish_packet.payload.data
+
+            if self.queue.full():
+                await self.queue.get()
+            await self.queue.put(payload)
+
+    async def get(self, timeout=None):
         assert isinstance(timeout, (float, int)) or timeout is None, timeout
 
-        start = time.time()
+        await self._async_init()
 
-        while True:
-            try:
-                ret = await self.queue.get()
-                return ret
-            except asyncio.QueueEmpty:
-                if not block:
-                    return None
-
-                if timeout is not None:
-                    delta = time.time() - start
-                    if delta > timeout:
-                        return None
-
-                await asyncio.sleep(0.1)
+        try:
+            ret = await aio.wait_for(self.queue.get(), timeout=timeout)
+            return ret.decode('utf-8')
+        except aio.exceptions.TimeoutError:
+            return None
 
     async def put(self, data):
-        while not self.connected:
-            LOG.info("mqtt not ready, sleep and retry")
-            await asyncio.sleep(0.1)
+
+        await self._async_init()
         assert isinstance(data, (str, bytes)), data
-        await self.client.publish(self.topic, data, qos=self.qos)
+        await self.cli.publish(self.topic, data, qos=self.qos)
         LOG.info("publish payload=%s topic=%s", data, self.topic)
+
+    def sync_get(self, timeout=None):
+        return aio.run(self.get())
+
+    def sync_put(self, data):
+        return aio.run(self.put(data))

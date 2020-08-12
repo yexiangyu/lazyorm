@@ -99,6 +99,7 @@ class AsyncElasticNode(AsyncLazyNode):
             [es_node],
             http_auth=http_auth
         )
+
         self.index = index
         LOG.debug('connect %s with index=%s, %s, %s', es_node, index, es_username, es_password)
 

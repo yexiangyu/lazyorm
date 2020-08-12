@@ -1,7 +1,7 @@
 import logging
 import redis
 import json
-from .lazynode import LazyNode
+from .lazynode import LazyNode, AsyncLazyNode
 
 LOG = logging.getLogger("lazy.redis")
 
@@ -23,3 +23,7 @@ class RedisNode(LazyNode):
     def delte(self, *keys):
         assert len(keys), keys
         self.client.hdel(self.hash, *keys)
+
+
+class AsyncRedisNode(AsyncLazyNode):
+    pass
