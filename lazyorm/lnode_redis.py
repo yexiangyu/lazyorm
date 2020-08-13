@@ -76,7 +76,7 @@ class _RedisNode(object):
         await self._async_init()
         hash = hash or self.hash
         assert hash
-        ret = await self.cli.hset(hash, key, value, **kwargs)
+        ret = await self.cli.hset(hash, key, value)
         return ret
 
     async def hdel(self, key, hash=None):

@@ -52,6 +52,8 @@ def _s_rd_hset(self, key, **kwargs):
 async def _rd_hget(cls, key):
     assert cls._rd
     ret = await cls._rd.hget(key)
+    if ret is None:
+        return None
     ret = json.loads(ret)
     return cls(**ret)
 
