@@ -1,6 +1,4 @@
-import asyncio as aio
 import json
-from .ldict import LDict, LDictMeta
 from .llog import getLogger
 from .lnode_elastic import ESNode
 
@@ -43,6 +41,17 @@ def _s_es_search(cls, offset=0, page_size=10, **kwargs):
     return cls._es.loop.run_until_complete(cls._es_search(offset, page_size, **kwargs))
 
 
+@classmethod
+async def _es_delete(cls, doc_id=None, **kwargs):
+    assert cls._es
+    await cls._es.delete(doc_id=doc_id, **kwargs)
+
+
+@classmethod
+def _s_es_delete(cls, doc_id=None, **kwargs):
+    return cls._es.loop.run_until_complete(cls._es_delete(doc_id=doc_id, **kwargs))
+
+
 def meta_append_elastic_methods(name, attrs, is_async):
 
     assert isinstance(attrs, dict)
@@ -52,13 +61,16 @@ def meta_append_elastic_methods(name, attrs, is_async):
         attrs['es_put'] = _es_put
         attrs['es_get'] = _es_get
         attrs['es_search'] = _es_search
+        attrs['es_delete'] = _es_delete
     else:
         attrs['_es_put'] = _es_put
         attrs['_es_get'] = _es_get
         attrs['_es_search'] = _es_search
+        attrs['_es_delete'] = _es_delete
         attrs['es_put'] = _s_es_put
         attrs['es_get'] = _s_es_get
         attrs['es_search'] = _s_es_search
+        attrs['es_delete'] = _s_es_delete
 
     _es = ESNode(name)
 

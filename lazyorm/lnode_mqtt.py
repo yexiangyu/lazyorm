@@ -51,13 +51,13 @@ class _MQTTNode(object):
 
         self.cli = mqtt.MQTTClient(self.client_id, loop=self.loop)
 
-        LOG.info("mqtt client internal loop=%d", id(self.cli._loop))
+        LOG.debug("mqtt client internal loop=%d", id(self.cli._loop))
         await self.cli.connect(f"mqtt://{self.host}:{self.port}")
-        LOG.info("mqtt client connected with loop=%s in __async_init", id(self.loop))
+        LOG.debug("mqtt client connected with loop=%s in __async_init", id(self.loop))
         await self.cli.subscribe([(self.topic, self.qos)])
         self.queue = aio.Queue(1024, loop=self.loop)
         self.async_connected = True
-        LOG.info("mqtt client %s id=%s connected, host=%s, port=%d", self.name, self.client_id, self.host, self.port)
+        LOG.debug("mqtt client %s id=%s connected, host=%s, port=%d", self.name, self.client_id, self.host, self.port)
 
     async def put(self, data):
         await self._async_init()
@@ -73,7 +73,13 @@ class _MQTTNode(object):
         if self.recv_task is None:
             self.recv_task = self.loop.create_task(self._recv())
 
-        return await aio.wait_for(self.queue.get(), timeout=timeout, loop=self.loop)
+        try:
+            ret = await aio.wait_for(self.queue.get(), timeout=timeout, loop=self.loop)
+            LOG.debug("got mqtt msg=%s", ret)
+            return ret
+        except aio.exceptions.TimeoutError:
+            LOG.debug("timeout=%s reached, return None", timeout)
+            return None
 
     async def _recv(self):
         while True:
@@ -95,13 +101,10 @@ class MQTTNode(object):
             if not kwargs:
                 return None
             loop = kwargs.get('loop')
-            LOG.info("create mqtt node instance %s: loop=%s", name, 'none' if loop is None else id(loop))
+            LOG.debug("create mqtt node instance %s: loop=%s", name, 'none' if loop is None else id(loop))
             cls._instances[name] = _MQTTNode(name, **kwargs)
 
         inst = cls._instances[name]
-
-        # if kwargs:
-        #     assert inst._kwargs == kwargs
 
         return inst
 

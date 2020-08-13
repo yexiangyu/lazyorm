@@ -1,6 +1,4 @@
-import asyncio as aio
 import json
-from .ldict import LDict, LDictMeta
 from .llog import getLogger
 from .lnode_mqtt import MQTTNode
 
@@ -32,7 +30,7 @@ async def _mq_get(cls, timeout=None):
 
 
 def _s_mq_put(self):
-    assert sef._mq.loop
+    assert self._mq.loop
     return self._mq.loop.run_until_complete(self._mq_put())
 
 
