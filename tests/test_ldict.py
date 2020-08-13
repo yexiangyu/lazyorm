@@ -1,31 +1,17 @@
-from lazyorm.ldict import LDict
+from helper import LOG, create_class_n_loop
 
-data = dict(id=1, name='test')
-
-
-class Human(LDict):
-    _cols = dict(
-        id=str,
-        name=str,
-    )
+_, Human = create_class_n_loop()
 
 
-def test_create():
+def test_ldict():
     h = Human()
-    assert h.id == ''
-    assert h.name == ''
-    h.id = 'test_id'
-    assert h.id == 'test_id'
+    LOG.info("create %s", h)
+    assert h.id
+    assert h.age
+    assert h.gender
+    assert h.name
+    assert h.address
 
 
-def test_inhere():
-    class Male(Human):
-        _cols = dict(
-            gender=lambda x=None: 'male'
-        )
-
-    m = Male()
-
-    assert m.gender == 'male'
-    assert m.id == ''
-    assert m.name == ''
+if __name__ == "__main__":
+    test_ldict()

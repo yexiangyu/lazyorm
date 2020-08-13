@@ -6,7 +6,7 @@ LOG = logging.getLogger("lazy")
 CHANNEL = logging.StreamHandler()
 
 FORMATTER = logging.Formatter(
-    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    "%(asctime)s - %(name)16s - %(levelname)8s - %(message)s"
 )
 
 CHANNEL.setFormatter(FORMATTER)
@@ -21,4 +21,10 @@ LOG.propagate = False
 
 
 def getLogger(name):
+    if not name.startswith('lazy.'):
+        name = 'lazy.' + name
     return logging.getLogger(name)
+
+
+def setDebugLevel(level):
+    LOG.setLevel(level)
