@@ -2,9 +2,9 @@ from setuptools import setup, find_packages
 
 setup(
     name="lazyorm",
-    version="0.2.0",
+    version="0.3.0",
     keywords=("lazy", "elasticsearch", "mqtt", "redis", "orm"),
-    long_description="lay elastic/mqtt/redis orm, put/get/search/delete",
+    long_description="lazy elastic/mqtt/redis orm, put/get/search/delete",
     license="MIT Licence",
     url="https://github.com/yexiangyu/lazyorm",
     author="yexiangyu",

@@ -1,2 +1,7 @@
 # lazyorm
-a key value orm to mqtt/elasticsearch/redis
+
+a key value mapping orm to mqtt/elasticsearch/redis
+
+## examples
+
+`tests/test_async.py`
