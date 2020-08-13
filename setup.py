@@ -18,6 +18,7 @@ setup(
         'redis',
         'paho-mqtt',
         'nanoid',
-        'hbmqtt'
+        'hbmqtt',
+        'Faker'
     ],
 )
