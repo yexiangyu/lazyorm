@@ -43,13 +43,13 @@ def _s_es_search(cls, offset=0, page_size=10, sort=None, **kwargs):
 
 
 @classmethod
-async def _es_delete(cls, doc_id=None, **kwargs):
+async def _es_del(cls, doc_id=None, **kwargs):
     assert cls._es
     await cls._es.delete(doc_id=doc_id, **kwargs)
 
 
 @classmethod
-def _s_es_delete(cls, doc_id=None, **kwargs):
+def _s_es_del(cls, doc_id=None, **kwargs):
     return cls._es.loop.run_until_complete(cls._es_delete(doc_id=doc_id, **kwargs))
 
 
@@ -62,16 +62,16 @@ def meta_append_elastic_methods(name, attrs, is_async):
         attrs['es_put'] = _es_put
         attrs['es_get'] = _es_get
         attrs['es_search'] = _es_search
-        attrs['es_delete'] = _es_delete
+        attrs['es_del'] = _es_del
     else:
         attrs['_es_put'] = _es_put
         attrs['_es_get'] = _es_get
         attrs['_es_search'] = _es_search
-        attrs['_es_delete'] = _es_delete
+        attrs['_es_del'] = _es_del
         attrs['es_put'] = _s_es_put
         attrs['es_get'] = _s_es_get
         attrs['es_search'] = _s_es_search
-        attrs['es_delete'] = _s_es_delete
+        attrs['es_del'] = _s_es_del
 
     _es = ESNode(name)
 
