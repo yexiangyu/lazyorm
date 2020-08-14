@@ -15,7 +15,7 @@ setup(
         'setuptools',
         'elasticsearch >=7.8.0',
         'aiohttp',
-        'redis',
+        'aioredis',
         'paho-mqtt',
         'nanoid',
         'hbmqtt',
