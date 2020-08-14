@@ -19,6 +19,8 @@ def _s_rd_set(self, key, **kwargs):
 async def _rd_get(cls, key):
     assert cls._rd
     ret = await cls._rd.get(key)
+    if ret is None:
+        return None
     ret = json.loads(ret)
     return cls(**ret)
 

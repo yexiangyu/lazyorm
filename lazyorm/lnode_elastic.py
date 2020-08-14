@@ -38,11 +38,12 @@ class ESTrans(elastic.AsyncTransport):
             self.create_sniff_task(initial=True)
 
 
-def simple_search_query(offset, page_size, **kwargs):
+def simple_search_query(offset, page_size, sort, **kwargs):
 
     if not kwargs:
         return {
             "query": {"match_all": {}},
+            "sort": sort,
             "from": offset,
             "size": page_size
         }
@@ -53,6 +54,7 @@ def simple_search_query(offset, page_size, **kwargs):
         "query": {
             "bool": dict(must=must)
         },
+        "sort": sort,
         "from": offset,
         "size": page_size
     }
@@ -99,9 +101,9 @@ class _ESNode(object):
 
         return rets[0]
 
-    async def search(self, offset=0, page_size=10, **kwargs):
+    async def search(self, offset=0, page_size=10, sort=None, **kwargs):
 
-        body = simple_search_query(offset, page_size, **kwargs)
+        body = simple_search_query(offset, page_size, sort, **kwargs)
 
         try:
             ret = await self.cli.search(
