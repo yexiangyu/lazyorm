@@ -19,6 +19,7 @@ class LDict(dict, metaclass=LDictMetaClass):
     def __getattr__(self, k):
         if k in self._cols:
             return self[k]
+
         return self.__getattribute__(k)
 
     def __setattr__(self, k, v):

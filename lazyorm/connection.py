@@ -21,6 +21,7 @@ class _Config(LDict):
 class RedisConfig(_Config):
     _cols = dict(
         port=lambda x=None: 6379 if x is None else int(x),
+        db=lambda x=None: 0 if x is None else int(x)
     )
 
 

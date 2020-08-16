@@ -156,9 +156,11 @@ class ESNode(object):
             cls._instances[name] = _ESNode(name, **kwargs)
             cls._instances[name].loop = loop
 
-        inst = cls._instances[name]
 
-        return inst
+cli =
+inst = cls._instances[name]
+
+return inst
 
 
 def init_elastic(name, host, port, index, username=None, password=None, loop=None):

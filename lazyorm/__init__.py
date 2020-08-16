@@ -1,5 +1,5 @@
 from .ldict import LDict
-from .lmodel import LObject
+from .lmodel import LObject, SLObject, build_model
 from .connection import RedisConfig
 from .connection import ElasticConfig
 from .connection import MqttConfig
