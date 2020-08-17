@@ -1,3 +1,4 @@
+import json
 import asyncio as aio
 from .logger import getLogger
 from asyncio.tasks import wait_for
@@ -86,7 +87,8 @@ class AsyncMQTT(object):
             ret = None
 
         LOG.debug("get topic=%s return=%s", topic, repr(ret))
-        return ret
+
+        return json.loads(ret) if ret else None
 
 
 def connect_mqtt():

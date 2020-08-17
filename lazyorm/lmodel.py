@@ -97,10 +97,7 @@ class LObject(LDict):
     async def _rd_get(cls, key):
         cls._check_redis()
         LOG.debug("%s rd getting key=%s", cls.__name__, key)
-        ret = await cls._rd.get(key)
-        if ret is not None:
-            ret = json.loads(ret)
-        return ret
+        return await cls._rd.get(key)
 
     @classmethod
     async def _rd_del(cls, key):
@@ -126,27 +123,30 @@ class LObject(LDict):
         return await cls._rd.hdelete(cls._rd_hash, key)
 
     @classmethod
-    async def _rd_lpop(cls, key, timeout=None):
+    async def _rd_lpop(cls, queue=None, timeout=None):
         cls._check_redis()
-        LOG.debug("%s rd lpoping key=%s, timeout=%s", cls.__name__, key, repr(timeout))
-        return await cls._rd.hlpop(key, timeout=timeout)
+        queue = queue if queue else cls._rd_queue
+        LOG.debug("%s rd lpoping queue=%s, timeout=%s", cls.__name__, queue, repr(timeout))
+        return await cls._rd.lpop(queue, timeout=timeout)
 
-    async def _rd_rpush(self, key):
+    async def _rd_rpush(self, queue=None):
         self._check_redis()
-        LOG.debug("%s rd rpushing key=%s ", self.__class__.__name__, key)
-        return await self._rd.rpush(key, json.dups(self))
+        queue = queue if queue else self._rd_queue
+        LOG.debug("%s rd rpushing queue=%s ", self.__class__.__name__, queue)
+        return await self._rd.rpush(queue, json.dumps(self))
 
-    async def _mq_put(self):
+    async def _mq_put(self, topic=None):
         self._check_mqtt()
-        LOG.debug("%s mq puting topic=%s ", self.__class__.__name__, self._mq_topic)
-        return await self._mq.put(self._mq_topic, json.dumps(self))
+        topic = topic if topic else self._mq_topic
+        LOG.debug("%s mq puting topic=%s ", self.__class__.__name__, topic)
+        return await self._mq.put(topic, json.dumps(self))
 
     @classmethod
-    async def _mq_get(cls, timeout=None):
+    async def _mq_get(cls, topic=None, timeout=None):
         cls._check_mqtt()
-        LOG.debug("%s mq getting topic=%s timeout=%s", cls.__name__, cls._mq_topic, timeout)
-        ret = await cls._mq.get(cls._mq_topic, timeout=timeout)
-        return json.loads(ret) if ret else None
+        topic = topic if topic else cls._mq_topic
+        LOG.debug("%s mq getting topic=%s timeout=%s", cls.__name__, topic, timeout)
+        return await cls._mq.get(topic, timeout=timeout)
 
     # wrap result
 
@@ -198,19 +198,19 @@ class LObject(LDict):
         return await cls._rd_del(key)
 
     @classmethod
-    async def rd_lpop(cls, key, timeout=None):
-        ret = await cls._rd_lpop(key, timeout)
+    async def rd_lpop(cls, queue=None, timeout=None):
+        ret = await cls._rd_lpop(queue, timeout)
         return cls(**ret) if ret else None
 
-    async def rd_rpush(self, key):
-        return await self._rd_rpush(key)
+    async def rd_rpush(self, queue=None):
+        return await self._rd_rpush(queue)
 
-    async def mq_put(self):
-        return await self._mq_put()
+    async def mq_put(self, topic=None):
+        return await self._mq_put(topic=topic)
 
     @classmethod
-    async def mq_get(cls, timeout=None):
-        ret = await cls._mq_get(timeout)
+    async def mq_get(cls, topic=None, timeout=None):
+        ret = await cls._mq_get(topic=topic, timeout=timeout)
         return cls(**ret) if ret else None
 
     async def _es_put_n_cache(self, doc_id, expire=None):
@@ -300,19 +300,19 @@ class SLObject(LObject):
         return cls._loop.run_until_complete(cls._rd_del(key))
 
     @classmethod
-    def rd_lpop(cls, key, timeout=None):
-        ret = cls._loop.run_until_complete(cls._rd_lpop(key, timeout))
+    def rd_lpop(cls, queue=None, timeout=None):
+        ret = cls._loop.run_until_complete(cls._rd_lpop(queue, timeout))
         return cls(**ret) if ret else None
 
-    def rd_rpush(self, key):
-        return self._loop.run_until_complete(self._rd_rpush(key))
+    def rd_rpush(self, queue=None):
+        return self._loop.run_until_complete(self._rd_rpush(queue))
 
-    def mq_put(self):
-        return self._loop.run_until_complete(self._mq_put())
+    def mq_put(self, topic=None):
+        return self._loop.run_until_complete(self._mq_put(topic))
 
     @classmethod
-    def mq_get(cls, timeout=None):
-        ret = cls._loop.run_until_complete(cls._mq_get(timeout))
+    def mq_get(cls, topic=None, timeout=None):
+        ret = cls._loop.run_until_complete(cls._mq_get(topic, timeout))
         return cls(**ret) if ret else None
 
     def es_put_n_cache(self, doc_id, expire=None):
@@ -326,6 +326,22 @@ class SLObject(LObject):
     @classmethod
     def es_del_n_cache(cls, doc_id):
         return cls._loop.run_until_complete(cls._es_del_n_cache(doc_id))
+
+    def __del__(self):
+        if self._es.cli:
+            self._loop.run_until_complete(self._es.cli.close())
+            self._es.cli = None
+            LOG.debug("close elasticsearch")
+
+        if self._rd.cli:
+            self._rd.cli.close()
+            self._loop.run_until_complete(self._rd.cli.wait_closed())
+            self._rd.cli = None
+            LOG.debug("close redis")
+
+        if self._mq.cli:
+            self._mq.cli = None
+            LOG.debug("close mqtt")
 
 
 def build_model(is_async=True):

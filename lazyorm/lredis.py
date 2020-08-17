@@ -1,3 +1,4 @@
+import json
 from .lloop import get_loop
 from .logger import getLogger
 import asyncio as aio
@@ -42,7 +43,7 @@ class AsyncRedis(object):
         await self._async_init()
         ret = await self.cli.get(key)
         LOG.debug("get with key=%s, return %s", key, repr(ret))
-        return ret.decode() if ret is not None else None
+        return json.loads(ret) if ret is not None else None
 
     async def set(self, key, value, **kw):
         await self._async_init()
@@ -60,7 +61,7 @@ class AsyncRedis(object):
         await self._async_init()
         ret = await self.cli.hget(hash, key)
         LOG.debug("get with hash=%s, key=%s, return %s", hash, key, repr(ret))
-        return ret.decode() if ret is not None else None
+        return json.loads(ret) if ret is not None else None
 
     async def hset(self, hash, key, value, **kwargs):
         await self._async_init()
@@ -76,9 +77,10 @@ class AsyncRedis(object):
 
     async def lpop(self, topic, timeout=0):
         await self._async_init()
+        timeout = 0 if timeout is None else int(timeout)
         ret = await self.cli.blpop(topic, timeout=timeout)
         LOG.debug("lpop with topic=%s, timeout=%s, return %s", topic, repr(timeout),  repr(ret))
-        return ret[1].decode() if ret is not None else None
+        return json.loads(ret[1]) if ret is not None else None
 
     async def rpush(self, topic, data):
         await self._async_init()
