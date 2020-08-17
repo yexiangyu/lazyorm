@@ -15,6 +15,7 @@ class LObject(LDict):
 
     _es = None
     _es_index = None
+    _es_refresh = '10s'
 
     _mq = None
     _mq_topic = None
@@ -26,9 +27,12 @@ class LObject(LDict):
     _loop = get_loop()
 
     @classmethod
-    def _check_elastic(cls):
+    async def _check_elastic(cls):
         if cls._es is None:
             cls._es = connect_elastic()
+            if cls._es_index:
+                LOG.info("update index=%s refresh=%s", cls._es_index, cls._es_refresh)
+                await cls._es.cli.indices.put_settings('{"settings": {"refresh_interval": "%s"}}' % (cls._es_refresh), index=cls._es_index)
 
         if cls._es is None:
             raise RuntimeError("es not initialized")
@@ -60,31 +64,31 @@ class LObject(LDict):
         LOG.debug("check mqtt=%s", cls._mq is not None)
 
     async def _es_put(self, doc_id=None):
-        self._check_elastic()
+        await self._check_elastic()
         LOG.debug("%s es putting doc_id=%s", self.__class__.__name__, doc_id)
         return await self._es.put(self._es_index, json.dumps(self), doc_id=doc_id)
 
     @classmethod
     async def _es_get(cls, doc_id=None, **kwargs):
-        cls._check_elastic()
+        await cls._check_elastic()
         LOG.debug("%s es getting doc_id=%s, kwargs=%s", cls.__name__, doc_id, kwargs)
         return await cls._es.get(cls._es_index, doc_id=doc_id, **kwargs)
 
     @classmethod
     async def _es_del(cls, doc_id=None, **kwargs):
-        cls._check_elastic()
+        await cls._check_elastic()
         LOG.debug("%s es deleting doc_id=%s, kwargs=%s", cls.__name__, doc_id, kwargs)
         return await cls._es.delete(cls._es_index, doc_id=doc_id, **kwargs)
 
     @classmethod
     async def _es_search(cls, offset=0, page_size=10, **kwargs):
-        cls._check_elastic()
+        await cls._check_elastic()
         LOG.debug("%s es searching offset=%d, page_size=%d, kwargs=%s", cls.__name__, offset, page_size, kwargs)
         return await cls._es.search(cls._es_index, offset, page_size, **kwargs)
 
     @classmethod
     async def _es_search_by_query(cls, query):
-        cls._check_elastic()
+        await cls._check_elastic()
         LOG.debug("%s es searching by query=%s", cls.__name__, query)
         return await cls._es.es_search_by_query(cls._es_index, query)
 
@@ -169,7 +173,7 @@ class LObject(LDict):
 
     @classmethod
     async def es_search_by_query(cls, query):
-        cls._check_elastic()
+        await cls._check_elastic()
         total, rets = await cls._es.search_by_query(cls._es_index, query)
         return total, [cls(**ret) for ret in rets]
 
