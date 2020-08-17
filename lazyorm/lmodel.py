@@ -169,8 +169,8 @@ class LObject(LDict):
 
     @classmethod
     async def es_search_by_query(cls, query):
-        cls._check_es_connection()
-        total, rets = await cls._es.es_search_by_query(cls._es_index, query)
+        cls._check_elastic()
+        total, rets = await cls._es.search_by_query(cls._es_index, query)
         return total, [cls(**ret) for ret in rets]
 
     async def rd_set(self, key, expire=None):

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="lazyorm",
-    version="0.5.0",
+    version="0.5.3",
     keywords=("lazy", "elasticsearch", "mqtt", "redis", "orm"),
     long_description="lazy elastic/mqtt/redis orm, put/get/search/delete",
     license="MIT Licence",
@@ -21,5 +21,5 @@ setup(
         'hbmqtt',
         'Faker'
     ],
-    python_requires=">=3.7"
+    python_requires=">=3.6.9"
 )
