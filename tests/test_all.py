@@ -7,6 +7,10 @@ from lazyorm.lmqtt import connect_mqtt
 from lazyorm.lelastic import connect_elastic
 from lazyorm.lredis import connect_redis
 import lazyorm as lorm
+from lazyorm.logger import setDebugLevel
+
+import logging
+setDebugLevel(logging.DEBUG)
 
 
 def test_dict():

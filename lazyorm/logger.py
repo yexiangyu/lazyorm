@@ -9,7 +9,7 @@ _LOG.setLevel(logging.INFO)
 CHANNEL = logging.StreamHandler()
 
 FORMATTER = logging.Formatter(
-    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    "%(asctime)s - %(name)10s - %(levelname)6s - %(message)s"
 )
 
 CHANNEL.setFormatter(FORMATTER)

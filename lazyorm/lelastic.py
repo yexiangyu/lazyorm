@@ -54,30 +54,38 @@ class AsyncElastic(object):
 
     async def put(self, index, data, doc_id=None):
         await self.cli.index(index, data, id=doc_id)
+        LOG.debug("put index=%s, doc_id=%s", index, doc_id)
+        return
 
     async def get(self, index, doc_id=None, **kwargs):
         if doc_id is not None:
             try:
                 ret = await self.cli.get(index, id=doc_id)
+                LOG.debug("get index=%s, doc_id=%s", index, doc_id)
                 return ret['_source']
             except elasticsearch.exceptions.NotFoundError:
+                LOG.debug("get index=%s, doc_id=%s return None", index, doc_id)
                 return None
 
         _, rets = self.search(index, 0, 2, **kwargs)
 
         if len(rets) != 1:
+            LOG.debug("get index=%s, doc_id=None return multiple results or null result", index)
             return None
 
+        LOG.debug("get index=%s, doc_id=None kwargs=%s", index, kwargs)
         return rets[0]['_source']
 
     async def delete(self, index, doc_id=None, **kwargs):
         if doc_id is not None:
-            return await self.cli.delete(index, id=doc_id)
+            await self.cli.delete(index, id=doc_id)
+            LOG.debug("del index=%s, doc_id=%s", index, doc_id)
+            return
 
-        raise AttributeError()
+        raise AttributeError("delete with kwargs not available")
 
     async def delete_by_query(self, index, query):
-        raise AttributeError()
+        raise AttributeError("delete by query not available")
 
     async def search(self, index, offset=0, page_size=10, **kwargs):
         if not kwargs:
@@ -112,6 +120,7 @@ class AsyncElastic(object):
             LOG.error(repr(e))
             total, rets = 0, []
 
+        LOG.debug("search return %d results from total=%d", len(rets), total)
         return total, rets
 
     async def search_by_query(self, index, query):

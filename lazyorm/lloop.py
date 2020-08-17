@@ -3,7 +3,7 @@ import asyncio as aio
 
 LOOP = None
 
-LOG = getLogger('loop')
+LOG = getLogger('lo')
 
 
 def get_loop():

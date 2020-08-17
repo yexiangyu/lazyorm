@@ -1,11 +1,13 @@
 import json
 import asyncio as aio
-from lazyorm.lmqtt import connect_mqtt
-from lazyorm.lredis import connect_redis
-from lazyorm.lelastic import connect_elastic
-from lazyorm.connection import setup_elastic, setup_mqtt, setup_redis
-from lazyorm.lloop import get_loop
+from .lmqtt import connect_mqtt
+from .lredis import connect_redis
+from .lelastic import connect_elastic
+from .lloop import get_loop
 from .ldict import LDict
+from .logger import getLogger
+
+LOG = getLogger("model")
 
 
 class LObject(LDict):
@@ -30,6 +32,8 @@ class LObject(LDict):
         if cls._es is None:
             raise RuntimeError("es not initialized")
 
+        LOG.debug("check elastic=%s", cls._es is not None)
+
     @classmethod
     def _check_redis(cls):
         if cls._rd is None:
@@ -37,6 +41,8 @@ class LObject(LDict):
 
         if cls._rd is None:
             raise RuntimeError("rd not initialized")
+
+        LOG.debug("check redis=%s", cls._rd is not None)
 
     @classmethod
     def _check_mqtt(cls):
@@ -46,39 +52,47 @@ class LObject(LDict):
         if cls._mq is None:
             raise RuntimeError("mq not initialized")
 
+        LOG.debug("check mqtt=%s", cls._mq is not None)
+
     async def _es_put(self, doc_id=None):
         self._check_elastic()
+        LOG.debug("%s es putting doc_id=%s", self.__class__.__name__, doc_id)
         return await self._es.put(self._es_index, json.dumps(self), doc_id=doc_id)
 
     @classmethod
     async def _es_get(cls, doc_id=None, **kwargs):
         cls._check_elastic()
+        LOG.debug("%s es getting doc_id=%s, kwargs=%s", cls.__name__, doc_id, kwargs)
         return await cls._es.get(cls._es_index, doc_id=doc_id, **kwargs)
 
     @classmethod
     async def _es_del(cls, doc_id=None, **kwargs):
         cls._check_elastic()
+        LOG.debug("%s es deleting doc_id=%s, kwargs=%s", cls.__name__, doc_id, kwargs)
         return await cls._es.delete(cls._es_index, doc_id=doc_id, **kwargs)
 
     @classmethod
     async def _es_search(cls, offset=0, page_size=10, **kwargs):
         cls._check_elastic()
+        LOG.debug("%s es searching offset=%d, page_size=%d, kwargs=%s", cls.__name__, offset, page_size, kwargs)
         return await cls._es.search(cls._es_index, offset, page_size, **kwargs)
 
     @classmethod
     async def _es_search_by_query(cls, query):
         cls._check_elastic()
+        LOG.debug("%s es searching by query=%s", cls.__name__, query)
         return await cls._es.es_search_by_query(cls._es_index, query)
 
     async def _rd_set(self, key, expire=None):
         self._check_redis()
+        LOG.debug("%s rd setting key=%s, expire=%s", self.__class__.__name__, key, expire)
         return await self._rd.set(key, json.dumps(self), expire=expire)
 
     @classmethod
     async def _rd_get(cls, key):
         cls._check_redis()
+        LOG.debug("%s rd getting key=%s", cls.__name__, key)
         ret = await cls._rd.get(key)
-
         if ret is not None:
             ret = json.loads(ret)
         return ret
@@ -86,38 +100,46 @@ class LObject(LDict):
     @classmethod
     async def _rd_del(cls, key):
         cls._check_redis()
+        LOG.debug("%s rd deleting key=%s", cls.__name__, key)
         return await cls._rd.delete(key)
 
     async def _rd_hset(self, key, **kwargs):
         self._check_redis()
+        LOG.debug("%s rd hsetting key=%s", self.__name__, key)
         return await self._rd.hset(self._rd_hash, key, json.dumps(self), **kwargs)
 
     @classmethod
     async def _rd_hget(cls, key):
         cls._check_redis()
+        LOG.debug("%s rd hgetting key=%s", cls.__name__, key)
         return await cls._rd.hget(cls._rd_hash, key)
 
     @classmethod
     async def _rd_hdel(cls, key):
         cls._check_redis()
+        LOG.debug("%s rd hdeleting key=%s", cls.__name__, key)
         return await cls._rd.hdelete(cls._rd_hash, key)
 
     @classmethod
     async def _rd_lpop(cls, key, timeout=None):
         cls._check_redis()
+        LOG.debug("%s rd lpoping key=%s, timeout=%s", cls.__name__, key, repr(timeout))
         return await cls._rd.hlpop(key, timeout=timeout)
 
     async def _rd_rpush(self, key):
         self._check_redis()
+        LOG.debug("%s rd rpushing key=%s ", self.__class__.__name__, key)
         return await self._rd.rpush(key, json.dups(self))
 
     async def _mq_put(self, topic):
         self._check_mqtt()
+        LOG.debug("%s mq puting topic=%s ", self.__class__.__name__, topic)
         return await self._mq.put(topic, json.dumps(self))
 
     @classmethod
     async def _mq_get(cls, topic, timeout=None):
         cls._check_mqtt()
+        LOG.debug("%s mq getting topic=%s timeout=%s", cls.__name__, topic, timeout)
         return await cls._mq.get(topic, timeout=timeout)
 
     # wrap result
@@ -186,6 +208,7 @@ class LObject(LDict):
         return cls(**ret) if ret else None
 
     async def _es_put_n_cache(self, doc_id, expire=None):
+        LOG.debug("puting and cache doc_id=%s, expire=%s", doc_id, expire)
         await self._es_put(doc_id)
         await self._rd_set(doc_id, expire)
         return self
@@ -195,6 +218,7 @@ class LObject(LDict):
 
     @classmethod
     async def _es_get_n_cache(cls, doc_id, expire=None):
+        LOG.debug("getting and cache doc_id=%s, expire=%s", doc_id, expire)
         ret = await cls._rd_get(doc_id)
         if ret is None:
             ret = await cls._es_get(doc_id)
@@ -211,6 +235,7 @@ class LObject(LDict):
 
     @classmethod
     async def _es_del_n_cache(cls, doc_id):
+        LOG.debug("deleting and cache doc_id=%s", doc_id)
         await cls._es_del(doc_id)
         await cls._rd_del(doc_id)
 

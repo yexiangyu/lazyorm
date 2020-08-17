@@ -4,7 +4,7 @@ import asyncio as aio
 import aioredis
 from .connection import setup_redis
 
-LOG = getLogger('redis')
+LOG = getLogger('rd')
 
 REDIS = None
 
@@ -41,41 +41,49 @@ class AsyncRedis(object):
     async def get(self, key):
         await self._async_init()
         ret = await self.cli.get(key)
+        LOG.debug("get with key=%s, return %s", key, repr(ret))
         return ret.decode() if ret is not None else None
 
     async def set(self, key, value, **kw):
         await self._async_init()
         ret = await self.cli.set(key, value, **kw)
+        LOG.debug("set with key=%s, kwargs=%s, return %s", key, kw,  repr(ret))
         return ret
 
     async def delete(self, key):
         await self._async_init()
         ret = await self.cli.delete(key)
+        LOG.debug("del with key=%s, return %s", key, repr(ret))
         return ret
 
     async def hget(self, hash, key):
         await self._async_init()
         ret = await self.cli.hget(hash, key)
+        LOG.debug("get with hash=%s, key=%s, return %s", hash, key, repr(ret))
         return ret.decode() if ret is not None else None
 
     async def hset(self, hash, key, value, **kwargs):
         await self._async_init()
         ret = await self.cli.hset(hash, key, value)
+        LOG.debug("set with hash=%s, key=%s, return %s", hash, key, repr(ret))
         return ret
 
     async def hdelete(self, hash, key):
         await self._async_init()
         ret = await self.cli.hdel(hash, key)
+        LOG.debug("del with hash=%s, key=%s, return %s", hash, key, repr(ret))
         return ret
 
     async def lpop(self, topic, timeout=0):
         await self._async_init()
         ret = await self.cli.blpop(topic, timeout=timeout)
+        LOG.debug("lpop with topic=%s, timeout=%s, return %s", topic, repr(timeout),  repr(ret))
         return ret[1].decode() if ret is not None else None
 
     async def rpush(self, topic, data):
         await self._async_init()
         ret = await self.cli.rpush(topic, data)
+        LOG.debug("rpush with topic=%s, return %s", topic, repr(ret))
         return ret
 
 
