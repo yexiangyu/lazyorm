@@ -177,6 +177,10 @@ def test_model():
     ttttt = Test.es_get_n_cache('001')
     assert ttttt is None
 
+    t.mq_put()
+    tt = Test.mq_get()
+    assert t == tt
+
 
 if __name__ == "__main__":
     # test_dict()

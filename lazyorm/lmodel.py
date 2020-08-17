@@ -1,5 +1,6 @@
 import json
 import asyncio as aio
+from lazyorm.connection import setup_mqtt
 from .lmqtt import connect_mqtt
 from .lredis import connect_redis
 from .lelastic import connect_elastic
@@ -47,6 +48,10 @@ class LObject(LDict):
     @classmethod
     def _check_mqtt(cls):
         if cls._mq is None:
+            config = setup_mqtt()
+            if cls._mq_topic not in config.topics:
+                LOG.debug("%s._mq_topic=%s not in topics list, added", cls.__name__, cls._mq_topic)
+                config.topics.append(cls._mq_topic)
             cls._mq = connect_mqtt()
 
         if cls._mq is None:
@@ -131,16 +136,17 @@ class LObject(LDict):
         LOG.debug("%s rd rpushing key=%s ", self.__class__.__name__, key)
         return await self._rd.rpush(key, json.dups(self))
 
-    async def _mq_put(self, topic):
+    async def _mq_put(self):
         self._check_mqtt()
-        LOG.debug("%s mq puting topic=%s ", self.__class__.__name__, topic)
-        return await self._mq.put(topic, json.dumps(self))
+        LOG.debug("%s mq puting topic=%s ", self.__class__.__name__, self._mq_topic)
+        return await self._mq.put(self._mq_topic, json.dumps(self))
 
     @classmethod
-    async def _mq_get(cls, topic, timeout=None):
+    async def _mq_get(cls, timeout=None):
         cls._check_mqtt()
-        LOG.debug("%s mq getting topic=%s timeout=%s", cls.__name__, topic, timeout)
-        return await cls._mq.get(topic, timeout=timeout)
+        LOG.debug("%s mq getting topic=%s timeout=%s", cls.__name__, cls._mq_topic, timeout)
+        ret = await cls._mq.get(cls._mq_topic, timeout=timeout)
+        return json.loads(ret) if ret else None
 
     # wrap result
 
@@ -199,12 +205,12 @@ class LObject(LDict):
     async def rd_rpush(self, key):
         return await self._rd_rpush(key)
 
-    async def mq_put(self, topic):
-        return await self._mq_put(topic)
+    async def mq_put(self):
+        return await self._mq_put()
 
     @classmethod
-    async def mq_get(cls, topic, timeout=None):
-        ret = await cls._mq_get(topic, timeout)
+    async def mq_get(cls, timeout=None):
+        ret = await cls._mq_get(timeout)
         return cls(**ret) if ret else None
 
     async def _es_put_n_cache(self, doc_id, expire=None):
@@ -301,12 +307,12 @@ class SLObject(LObject):
     def rd_rpush(self, key):
         return self._loop.run_until_complete(self._rd_rpush(key))
 
-    def mq_put(self, topic):
-        return self._loop.run_until_complete(self._mq_put(topic))
+    def mq_put(self):
+        return self._loop.run_until_complete(self._mq_put())
 
     @classmethod
-    def mq_get(cls, topic, timeout=None):
-        ret = cls._loop.run_until_complete(cls._mq_get(topic, timeout))
+    def mq_get(cls, timeout=None):
+        ret = cls._loop.run_until_complete(cls._mq_get(timeout))
         return cls(**ret) if ret else None
 
     def es_put_n_cache(self, doc_id, expire=None):
