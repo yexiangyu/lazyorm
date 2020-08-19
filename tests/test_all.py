@@ -182,6 +182,17 @@ def test_model():
     assert t == tt
 
 
+def test_config():
+    from argparse import ArgumentParser
+    parser = ArgumentParser()
+    import os
+    conf = lorm.LConfig(parser=parser, file_name=os.path.dirname(__file__) + "/sample.json")
+    host = conf.get('host', 'ES_NODE')
+    port = conf.get('port', 'es_port')
+    es_node = conf.get('ES_NODE')
+    print(host, port, es_node)
+
+
 if __name__ == "__main__":
     # test_dict()
     # test_model()
@@ -189,4 +200,5 @@ if __name__ == "__main__":
     # test_elastic()
     # test_mqtt()
     # test_redis()
-    test_model()
+    # test_model()
+    test_config()

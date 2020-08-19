@@ -7,6 +7,7 @@ from .lelastic import connect_elastic
 from .lloop import get_loop
 from .ldict import LDict
 from .logger import getLogger
+from .lid import gen_id
 
 LOG = getLogger("model")
 
@@ -31,8 +32,17 @@ class LObject(LDict):
         if cls._es is None:
             cls._es = connect_elastic()
             if cls._es_index:
-                LOG.info("update index=%s refresh=%s", cls._es_index, cls._es_refresh)
+                try:
+                    await cls._es.cli.indices.create(cls._es_index)
+                except Exception as e:
+                    pass
+                except BaseException as e:
+                    pass
+                tmp_doc_id = gen_id()
+                await cls().es_put(doc_id=tmp_doc_id)
+                await cls.es_del(doc_id=tmp_doc_id)
                 await cls._es.cli.indices.put_settings('{"settings": {"refresh_interval": "%s"}}' % (cls._es_refresh), index=cls._es_index)
+                LOG.info("update index=%s refresh=%s", cls._es_index, cls._es_refresh)
 
         if cls._es is None:
             raise RuntimeError("es not initialized")

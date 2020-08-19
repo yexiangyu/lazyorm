@@ -21,3 +21,4 @@ from .lmodel import LObject, SLObject, build_model
 from .ldict import LDict
 from .logger import getLogger, setDebugLevel
 from .lid import gen_id
+from .lconfig import LConfig
